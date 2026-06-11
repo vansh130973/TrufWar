@@ -78,7 +78,7 @@ io.on('connection', (socket) => {
 
 // MongoDB connection
 mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb+srv://vansh13092006_db_user:ePtsCFxYN3XuXwM1@trufwar.ioqwh9a.mongodb.net/?appName=TrufWar')
+  .connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
     // Start decay job (runs every hour)
