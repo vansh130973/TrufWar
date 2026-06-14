@@ -1,6 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Polyline, Rectangle, useMap, Marker, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Polyline, Rectangle, useMap, Circle } from 'react-leaflet';
 import L from 'leaflet';
+import {
+  Crosshair,
+  Play,
+  Square,
+  Loader2,
+  Flag,
+  AlertTriangle,
+  Wifi,
+  WifiOff,
+  Navigation,
+  X,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useToast } from '../context/ToastContext';
@@ -97,7 +109,6 @@ export default function MapPage() {
   const [stoppingRun, setStoppingRun] = useState(false);
   const [captureResult, setCaptureResult] = useState(null);
 
-  // GPS tracking
   const pathRef = useRef([]);
 
   const handleNewPosition = useCallback((coords) => {
@@ -160,18 +171,12 @@ export default function MapPage() {
     if (!on) return;
     const unsub = on('territory-captured', (data) => {
       if (data.territory) {
-        setTerritories(prev => ({
-          ...prev,
-          [data.territory.gridKey]: data.territory,
-        }));
+        setTerritories(prev => ({ ...prev, [data.territory.gridKey]: data.territory }));
       }
     });
     const unsub2 = on('territory-update', (data) => {
       if (data.territory) {
-        setTerritories(prev => ({
-          ...prev,
-          [data.territory.gridKey]: data.territory,
-        }));
+        setTerritories(prev => ({ ...prev, [data.territory.gridKey]: data.territory }));
       }
     });
     return () => { unsub?.(); unsub2?.(); };
@@ -212,7 +217,7 @@ export default function MapPage() {
         color: user.color,
         location: position,
       });
-      addToast('Run started! Claim those streets! 🏃', 'success');
+      addToast('Run started! Claim those streets!', 'success');
     } catch (err) {
       addToast(err.response?.data?.error || 'Failed to start run', 'error');
     } finally {
@@ -233,7 +238,6 @@ export default function MapPage() {
         coordinates: pathRef.current,
       });
 
-      // Update local territory map with captured territories
       const reloadRes = await api.get('/territory/all');
       const terMap = {};
       reloadRes.data.territories.forEach(t => { terMap[t.gridKey] = t; });
@@ -246,11 +250,7 @@ export default function MapPage() {
       setCaptureResult(result);
       setTimeout(() => setCaptureResult(null), 5000);
 
-      addToast(
-        `Run complete! ${result.newlyCaptured} territories captured 🏴`,
-        'success',
-        5000
-      );
+      addToast(`Run complete! ${result.newlyCaptured} territories captured`, 'success', 5000);
       refreshUser();
     } catch (err) {
       addToast(err.response?.data?.error || 'Failed to save run', 'error');
@@ -268,7 +268,7 @@ export default function MapPage() {
 
   return (
     <div className="h-full relative">
-      {/* Map */}
+      {/* Map — CartoDB Dark Matter (native dark tiles, no CSS filter hack needed) */}
       <MapContainer
         center={defaultCenter}
         zoom={16}
@@ -276,8 +276,10 @@ export default function MapPage() {
         zoomControl={false}
       >
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          subdomains="abcd"
+          maxZoom={20}
         />
 
         <MapController position={position} shouldFollow={followUser} />
@@ -295,7 +297,12 @@ export default function MapPage() {
         {polylinePoints.length > 1 && (
           <Polyline
             positions={polylinePoints}
-            pathOptions={{ color: user.color, weight: 4, opacity: 0.9, dashArray: isRunning ? '8,4' : null }}
+            pathOptions={{
+              color: user.color,
+              weight: 4,
+              opacity: 0.9,
+              dashArray: isRunning ? '8,4' : null,
+            }}
           />
         )}
 
@@ -319,19 +326,19 @@ export default function MapPage() {
         <div className="bg-turf-surface/90 backdrop-blur-sm border border-turf-border rounded-xl px-3 py-2 pointer-events-auto">
           {position ? (
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-turf-accent" />
+              <Navigation size={13} className="text-turf-accent" strokeWidth={2.5} />
               <span className="text-turf-accent text-xs font-mono font-semibold">GPS</span>
             </div>
           ) : (
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-turf-warning animate-pulse" />
+              <WifiOff size={13} className="text-turf-warning animate-pulse" strokeWidth={2} />
               <span className="text-turf-warning text-xs font-mono font-semibold">SEARCHING</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Run HUD - shown while running */}
+      {/* Run HUD — shown while running */}
       {isRunning && (
         <div className="absolute top-16 left-3 right-3 z-[1000] animate-slide-up">
           <div className="bg-turf-surface/95 backdrop-blur-sm border border-turf-accent/30 rounded-xl p-3">
@@ -361,14 +368,16 @@ export default function MapPage() {
       {captureResult && captureResult.newlyCaptured > 0 && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1001] animate-slide-up pointer-events-none">
           <div className="bg-turf-surface border-2 border-turf-accent rounded-2xl px-6 py-4 text-center shadow-2xl">
-            <p className="text-4xl mb-1">🏴</p>
+            <div className="flex justify-center mb-1">
+              <Flag size={40} className="text-turf-accent" fill="currentColor" strokeWidth={1} />
+            </div>
             <p className="font-display font-black text-2xl text-turf-accent">+{captureResult.newlyCaptured}</p>
             <p className="text-turf-muted text-sm">territories claimed</p>
           </div>
         </div>
       )}
 
-      {/* Territory popup */}
+      {/* Territory info popup */}
       {selectedTerritory && (
         <div className="absolute bottom-24 left-3 right-3 z-[1000] animate-slide-up">
           <div className="bg-turf-surface border border-turf-border rounded-xl p-4">
@@ -380,11 +389,15 @@ export default function MapPage() {
                     {selectedTerritory.ownerId?.username || selectedTerritory.ownerId || 'Unknown'}
                   </span>
                   {selectedTerritory.decayState === 'decaying' && (
-                    <span className="text-turf-warning text-xs">⚠️ Decaying</span>
+                    <span className="flex items-center gap-1 text-turf-warning text-xs">
+                      <AlertTriangle size={12} strokeWidth={2.5} />
+                      Decaying
+                    </span>
                   )}
                 </div>
                 <p className="text-turf-muted text-xs">
-                  Captured {selectedTerritory.capturedAt
+                  Captured{' '}
+                  {selectedTerritory.capturedAt
                     ? new Date(selectedTerritory.capturedAt).toLocaleDateString()
                     : 'Unknown'}
                 </p>
@@ -392,35 +405,42 @@ export default function MapPage() {
               </div>
               <button
                 onClick={() => setSelectedTerritory(null)}
-                className="text-turf-muted hover:text-turf-text text-xl leading-none"
+                className="text-turf-muted hover:text-turf-text transition-colors p-1"
+                aria-label="Close"
               >
-                ×
+                <X size={18} strokeWidth={2} />
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* GPS error */}
+      {/* GPS error banner */}
       {gpsError && (
         <div className="absolute top-16 left-3 right-3 z-[1000]">
-          <div className="bg-red-900/80 border border-red-500/50 rounded-xl px-4 py-3">
-            <p className="text-red-200 text-sm">⚠️ {gpsError}</p>
+          <div className="bg-red-900/80 border border-red-500/50 rounded-xl px-4 py-3 flex items-center gap-2">
+            <AlertTriangle size={16} className="text-red-300 flex-shrink-0" strokeWidth={2} />
+            <p className="text-red-200 text-sm">{gpsError}</p>
           </div>
         </div>
       )}
 
-      {/* Follow toggle */}
+      {/* Follow / center-on-me button */}
       <button
         onClick={() => setFollowUser(f => !f)}
+        aria-label={followUser ? 'Unfollow my location' : 'Follow my location'}
         className={`absolute right-3 z-[1000] w-10 h-10 rounded-xl border flex items-center justify-center transition-colors ${
           isRunning ? 'bottom-32' : 'bottom-24'
-        } ${followUser ? 'bg-turf-accent/20 border-turf-accent text-turf-accent' : 'bg-turf-surface/90 border-turf-border text-turf-muted'}`}
+        } ${
+          followUser
+            ? 'bg-turf-accent/20 border-turf-accent text-turf-accent'
+            : 'bg-turf-surface/90 border-turf-border text-turf-muted'
+        }`}
       >
-        <span className="text-lg">🎯</span>
+        <Crosshair size={20} strokeWidth={2} />
       </button>
 
-      {/* Start/Stop Run Button */}
+      {/* Start / Stop Run button */}
       <div className="absolute bottom-3 left-0 right-0 z-[1000] flex justify-center px-6">
         <button
           onClick={isRunning ? stopRun : startRun}
@@ -435,11 +455,17 @@ export default function MapPage() {
           `}
         >
           {startingRun || stoppingRun ? (
-            <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            <Loader2 size={22} className="animate-spin" />
           ) : isRunning ? (
-            <>⏹ Stop Run</>
+            <>
+              <Square size={20} strokeWidth={2.5} fill="currentColor" />
+              Stop Run
+            </>
           ) : (
-            <>▶ Start Run</>
+            <>
+              <Play size={20} strokeWidth={2.5} fill="currentColor" />
+              Start Run
+            </>
           )}
         </button>
       </div>

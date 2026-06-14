@@ -1,6 +1,45 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { Loader2, Play, Rocket } from 'lucide-react';
+
+// Custom inline SVG shield logo — no emoji, no external image, no flash on load
+function TurfWarShield() {
+  return (
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 48 48"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      {/* Shield body */}
+      <path
+        d="M24 4L7 12V27C7 36.5 14.5 44 24 47C33.5 44 41 36.5 41 27V12L24 4Z"
+        fill="#00ff8814"
+        stroke="#00ff88"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+      {/* Flag pole */}
+      <line
+        x1="19"
+        y1="32"
+        x2="19"
+        y2="18"
+        stroke="#00ff88"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      {/* Flag triangle */}
+      <path
+        d="M19 18L33 22L19 26Z"
+        fill="#00ff88"
+      />
+    </svg>
+  );
+}
 
 export default function LoginPage() {
   const { login, register } = useAuth();
@@ -39,7 +78,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-turf-surface border border-turf-border mb-4 animate-pulse-glow">
-            <span className="text-3xl">🗺️</span>
+            <TurfWarShield />
           </div>
           <h1 className="font-display text-4xl font-black text-white tracking-tight">
             TURF<span className="text-turf-accent">WAR</span>
@@ -119,15 +158,23 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 rounded-xl bg-turf-accent text-black font-display font-bold text-base tracking-wide transition-all duration-200 hover:bg-turf-accentDim active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+            className="w-full py-4 rounded-xl bg-turf-accent text-black font-display font-bold text-base tracking-wide transition-all duration-200 hover:bg-turf-accentDim active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed mt-2 flex items-center justify-center gap-2"
           >
             {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              <>
+                <Loader2 size={18} className="animate-spin" />
                 {mode === 'login' ? 'Signing In...' : 'Creating Account...'}
-              </span>
+              </>
+            ) : mode === 'login' ? (
+              <>
+                <Play size={16} strokeWidth={2.5} fill="currentColor" />
+                Enter Game
+              </>
             ) : (
-              mode === 'login' ? '▶ Enter Game' : '🚀 Start Running'
+              <>
+                <Rocket size={16} strokeWidth={2} />
+                Start Running
+              </>
             )}
           </button>
         </form>
